@@ -4,23 +4,42 @@
 <meta charset="utf-8" />
 <title>大阪ドローンマップ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <style>
 #map { height: 100vh; }
+
+/* 現在地ボタン */
+.locate-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
 </style>
 </head>
 <body>
 
 <div id="map"></div>
+<div class="locate-btn" onclick="goLocation()">現在地</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script>
 
+// 地図初期位置（大阪）
 var map = L.map('map').setView([34.6937, 135.5023], 11);
 
+// 地図タイル
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// ★これに戻す
+// DIDデータ読み込み（←ここ重要）
 fetch('oosaka.geojson')
 .then(res => res.json())
 .then(data => {
@@ -33,7 +52,29 @@ fetch('oosaka.geojson')
     }).addTo(map);
 });
 
+// 現在地ボタン処理
+function goLocation(){
+    map.locate({ setView: true, maxZoom: 16 });
+}
+
+// 現在地取得成功
+map.on('locationfound', function(e) {
+    L.marker(e.latlng).addTo(map)
+        .bindPopup("現在地")
+        .openPopup();
+
+    L.circle(e.latlng, {
+        radius: e.accuracy
+    }).addTo(map);
+});
+
+// エラー
+map.on('locationerror', function(e) {
+    alert("位置情報が取得できません");
+});
+
 </script>
 
 </body>
 </html>
+
