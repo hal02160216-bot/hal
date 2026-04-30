@@ -10,6 +10,7 @@
 <style>
 #map { height: 100vh; }
 
+/* 現在地ボタン */
 .locate-btn {
     position: absolute;
     top: 10px;
@@ -20,7 +21,6 @@
     border-radius: 5px;
     cursor: pointer;
 }
-
 </style>
 </head>
 <body>
@@ -29,8 +29,6 @@
 <div class="locate-btn" onclick="goLocation()">現在地</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<!-- 判定用ライブラリ -->
 <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
 
 <script>
@@ -44,17 +42,22 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 // DIDデータ
 var didLayer;
 
+// ★ クリックマーカー管理
+var lastMarker;
+
+// データ読み込み
 fetch('oosaka.geojson')
 .then(res => res.json())
 .then(data => {
 
     didLayer = data;
 
+    // ★ 枠線だけ表示
     L.geoJSON(data, {
         style: {
             color: "red",
-            fillColor: "red",
-            fillOpacity: 0.4
+            weight: 1,
+            fillOpacity: 0
         }
     }).addTo(map);
 });
@@ -78,12 +81,17 @@ map.on('locationerror', function(e) {
     alert("位置情報が取得できません");
 });
 
-// クリック判定
+// ★ クリック判定（完成版）
 map.on('click', function(e) {
 
     if (!didLayer) {
         alert("データ読み込み中");
         return;
+    }
+
+    // 前のマーカー削除
+    if (lastMarker) {
+        map.removeLayer(lastMarker);
     }
 
     var point = turf.point([e.latlng.lng, e.latlng.lat]);
@@ -96,16 +104,25 @@ map.on('click', function(e) {
         }
     });
 
-    if (inside) {
-        alert("ここは飛行NG（DID内）");
-    } else {
-        alert("ここは飛行OK（DID外）");
-    }
+    // 色とメッセージ
+    var color = inside ? "red" : "green";
+    var message = inside 
+        ? "飛行NG（人口集中地区）" 
+        : "飛行OK（DID外）";
 
+    // マーカー
+    lastMarker = L.circleMarker(e.latlng, {
+        radius: 8,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.8
+    }).addTo(map);
+
+    // ポップアップ
+    lastMarker.bindPopup(message).openPopup();
 });
 
 </script>
 
 </body>
 </html>
-
