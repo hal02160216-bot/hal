@@ -2,153 +2,65 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Drone Map Osaka</title>
+<title>Drone Map Japan</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-body {
-    margin: 0;
-    font-family: sans-serif;
-}
+body { margin:0; font-family:sans-serif; }
+#map { height:100vh; }
 
-/* 地図 */
-#map {
-    height: 100vh;
+/* ボタン */
+#infoBtn, #locateBtn {
+    position:absolute;
+    z-index:1000;
+    background:rgba(255,255,255,0.8);
+    backdrop-filter:blur(10px);
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,0.1);
+    cursor:pointer;
 }
-
-/* ＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-   ガラスボタン
-＝＝＝＝＝＝＝＝＝＝＝＝＝＝ */
 #infoBtn {
-    position: absolute;
-    bottom: 22px;
-    right: 22px;
-    width: 48px;
-    height: 48px;
-
-    background: rgba(255,255,255,0.75);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 20px;
-    color: #333;
-
-    cursor: pointer;
-    z-index: 1000;
-
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-
-    transition: 0.2s;
+    bottom:20px; right:20px;
+    width:48px; height:48px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
 }
-
-#infoBtn:hover {
-    transform: translateY(-2px) scale(1.05);
-}
-
-/* 現在地ボタン */
 #locateBtn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 1000;
-
-    padding: 8px 12px;
-    border-radius: 10px;
-
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(8px);
-
-    border: 1px solid rgba(0,0,0,0.1);
-    cursor: pointer;
+    top:12px; right:12px;
+    padding:8px 12px;
 }
 
-/* ＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-   モーダル（ガラス）
-＝＝＝＝＝＝＝＝＝＝＝＝＝＝ */
+/* モーダル */
 #modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-
-    display: none;
-    justify-content: center;
-    align-items: center;
-
-    background: rgba(0,0,0,0.25);
-    backdrop-filter: blur(6px);
-
-    z-index: 2000;
+    position:fixed;
+    width:100%; height:100%;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,0.3);
 }
-
 #modalContent {
-    width: 85%;
-    max-width: 420px;
-
-    padding: 20px;
-    border-radius: 16px;
-
-    background: rgba(255,255,255,0.75);
-    backdrop-filter: blur(14px);
-
-    border: 1px solid rgba(0,0,0,0.08);
-
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-
-    animation: pop 0.18s ease;
+    background:rgba(255,255,255,0.8);
+    padding:20px;
+    border-radius:16px;
+    width:85%;
+    max-width:400px;
 }
-
-@keyframes pop {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-#modalContent button {
-    margin-top: 10px;
-    padding: 8px 14px;
-    border: none;
-    border-radius: 10px;
-    background: rgba(0,0,0,0.08);
-    cursor: pointer;
-}
-
 </style>
 </head>
+
 <body>
 
 <div id="map"></div>
-
 <div id="locateBtn">現在地</div>
 <div id="infoBtn">ⓘ</div>
 
-<!-- モーダル -->
 <div id="modal">
   <div id="modalContent">
     <h3>免責・出典</h3>
-
-    <p>
-      【免責事項】<br>
-      本マップは参考情報です。<br>
-      最終判断はDIPS・航空法等の公式情報をご確認ください。
-    </p>
-
-    <p>
-      【出典】<br>
-      ・国土地理院<br>
-      ・国土交通省 航空局<br>
-      ・国勢調査DIDデータ
-    </p>
-
+    <p>本マップは参考情報です。最終判断は公式情報をご確認ください。</p>
     <button onclick="closeModal()">閉じる</button>
   </div>
 </div>
@@ -159,18 +71,16 @@ body {
 <script>
 
 // 地図
-var map = L.map('map').setView([34.6937, 135.5023], 11);
+var map = L.map('map').setView([35.68,139.76], 6);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
-}).addTo(map);
+// 背景地図
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// DIDデータ
+// ===== DID =====
 var didLayer;
-var lastMarker;
 
-// 読み込み
-fetch('oosaka.geojson')
+// 全国DID読み込み
+fetch('A16-20_00_DID.json')
 .then(res => res.json())
 .then(data => {
 
@@ -178,29 +88,42 @@ fetch('oosaka.geojson')
 
     L.geoJSON(data, {
         style: {
-            color: "red",
+            color: "#ff4d4d",
             weight: 1,
-            fillOpacity: 0
+            fillOpacity: 0.05
         }
     }).addTo(map);
 });
 
-// ＝＝＝＝＝＝＝＝＝＝＝
-// 現在地
-// ＝＝＝＝＝＝＝＝＝＝＝
-document.getElementById("locateBtn").onclick = function(){
-    map.locate({ setView: true, maxZoom: 16 });
-};
+// ===== 空港 =====
+var airportLayer = [
+    {name:"関西国際空港",lat:34.4347,lng:135.2441,radius:9000},
+    {name:"伊丹空港",lat:34.7855,lng:135.4382,radius:5000},
+    {name:"羽田空港",lat:35.5494,lng:139.7798,radius:8000},
+    {name:"成田空港",lat:35.7719,lng:140.3929,radius:9000}
+];
 
-map.on('locationfound', function(e){
-    L.marker(e.latlng).addTo(map)
-        .bindPopup("現在地")
-        .openPopup();
+airportLayer.forEach(a=>{
+    L.circle([a.lat,a.lng],{
+        radius:a.radius,
+        color:"orange",
+        fillColor:"orange",
+        fillOpacity:0.08
+    }).addTo(map).bindPopup(a.name);
 });
 
-// ＝＝＝＝＝＝＝＝＝＝＝
-// クリック判定
-// ＝＝＝＝＝＝＝＝＝＝＝
+// ===== 現在地 =====
+document.getElementById("locateBtn").onclick = ()=>{
+    map.locate({setView:true,maxZoom:15});
+};
+
+map.on('locationfound', e=>{
+    L.marker(e.latlng).addTo(map).bindPopup("現在地");
+});
+
+// ===== 判定 =====
+var lastMarker;
+
 map.on('click', function(e){
 
     if(!didLayer) return;
@@ -209,38 +132,51 @@ map.on('click', function(e){
 
     var point = turf.point([e.latlng.lng, e.latlng.lat]);
 
-    var inside = false;
-
-    didLayer.features.forEach(f => {
-        if(turf.booleanPointInPolygon(point, f)){
-            inside = true;
-        }
+    var inDID = false;
+    didLayer.features.forEach(f=>{
+        if(turf.booleanPointInPolygon(point,f)) inDID = true;
     });
 
-    var color = inside ? "red" : "green";
-    var text = inside
-        ? "飛行NG（人口集中地区）"
-        : "飛行OK（DID外）";
+    var inAirport = false;
+    airportLayer.forEach(a=>{
+        var dist = map.distance(e.latlng,[a.lat,a.lng]);
+        if(dist < a.radius) inAirport = true;
+    });
 
-    lastMarker = L.circleMarker(e.latlng, {
-        radius: 8,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.8
+    var text = "";
+    var color = "green";
+
+    if(inDID && inAirport){
+        text = "飛行NG（DID＋空港）";
+        color = "purple";
+    } else if(inDID){
+        text = "飛行NG（人口集中地区）";
+        color = "red";
+    } else if(inAirport){
+        text = "飛行NG（空港周辺）";
+        color = "orange";
+    } else {
+        text = "飛行OK（規制外）";
+        color = "green";
+    }
+
+    lastMarker = L.circleMarker(e.latlng,{
+        radius:8,
+        color:color,
+        fillColor:color,
+        fillOpacity:0.9
     }).addTo(map)
       .bindPopup(text)
       .openPopup();
 });
 
-// ＝＝＝＝＝＝＝＝＝＝＝
-// モーダル
-// ＝＝＝＝＝＝＝＝＝＝＝
-document.getElementById("infoBtn").onclick = function(){
-    document.getElementById("modal").style.display = "flex";
+// ===== モーダル =====
+document.getElementById("infoBtn").onclick = ()=>{
+    document.getElementById("modal").style.display="flex";
 };
 
 function closeModal(){
-    document.getElementById("modal").style.display = "none";
+    document.getElementById("modal").style.display="none";
 }
 
 </script>
